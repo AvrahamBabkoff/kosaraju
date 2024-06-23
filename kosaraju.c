@@ -104,7 +104,7 @@ Graph *getTranspose(Graph *graph)
 void dfsPrint(Graph *graph, int vertex)
 {
     graph->visited[vertex] = true;
-    // printf("%d ", vertex + 1);
+    printf("%d ", vertex + 1);
 
     Node *temp = graph->adjLists[vertex];
     while (temp)
@@ -118,7 +118,7 @@ void dfsPrint(Graph *graph, int vertex)
     }
 }
 
-Graph * kosaraju(Graph *graph)
+void kosaraju(Graph *graph)
 {
     int vertices = graph->numVertices;
     int stack[vertices];
@@ -145,32 +145,32 @@ Graph * kosaraju(Graph *graph)
         if (!transpose->visited[v])
         {
             dfsPrint(transpose, v);
-            // printf("\n");
+            printf("\n");
         }
     }
-    return transpose;
-    //freeGraph(transpose);
+    freeGraph(transpose);
 }
 
 int main()
 {
-    // for (int j = 0; j < 10; j++)
-    // {
-        for (int i = 0; i < 10000000; i++)
-        {
-            int vertices = 5;
-            Graph *graph = createGraph(vertices);
-            addEdge(graph, 1, 2);
-            addEdge(graph, 2, 3);
-            addEdge(graph, 3, 1);
-            addEdge(graph, 3, 4);
-            addEdge(graph, 4, 5);
+    int vertices, edges;
+    printf("Enter the number of vertices and number of edges:");
+    scanf("%d %d", &vertices, &edges);
 
-            // printf("Strongly Connected Components:\n");
-            Graph *tgraph = kosaraju(graph);
-            freeGraph(graph);
-            freeGraph(tgraph);
-        }
-    // }
+    Graph *graph = createGraph(vertices);
+
+    printf("Enter the edges (src dest) format:\n");
+    for (int i = 0; i < edges; i++)
+    {
+        int src, dest;
+        printf("Edge %d: ", i + 1);
+        scanf("%d %d", &src, &dest);
+        addEdge(graph, src, dest);
+    }
+
+    printf("Strongly Connected Components:\n");
+    kosaraju(graph);
+    freeGraph(graph);
+
     return 0;
 }
