@@ -1,3 +1,3 @@
-# vor
-vor
+# kosaraju
+kosaraju
 
