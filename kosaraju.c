@@ -32,8 +32,7 @@ void usage(void)
            "            Kosaraju\n"
            "            Newedge <from>,<to>\n"
            "            Removeedge <from>,<to>\n"
-           "        3: run as \"chat\" server. connected clients can enter commands as in 2\n"
-           );
+           "        3: run as \"chat\" server. connected clients can enter commands as in 2\n");
 
     exit(-1);
 }
@@ -219,9 +218,21 @@ Graph *getNewGraph(int vertices, int edges)
         printf("enter the %d directed edges as pairs of vertices <from> <to>:\n", edges);
         for (int i = 0; i < edges; i++)
         {
-            int src, dest;
-            scanf("%d %d", &src, &dest);
-            addEdge(globalGraph, src, dest);
+            char input[1024];
+            ssize_t bytesRead;
+            bytesRead = read(STDIN_FILENO, input, sizeof(input) - 1);
+            if (bytesRead < 0)
+            {
+                perror("read");
+                exit(EXIT_FAILURE);
+            }
+            input[bytesRead] = '\0';
+
+            char *src, *dest, *saveptr;
+            src = strtok_r(input, ",\n", &saveptr);
+            dest = strtok_r(NULL, ",\n", &saveptr);
+
+            addEdge(globalGraph, atoi(src), atoi(dest));
         }
     }
     return globalGraph;
@@ -242,7 +253,8 @@ void printCommands()
            "                User should enter <edges> pairs of directed edges\n"
            "            Kosaraju\n"
            "            Newedge <from>,<to>\n"
-           "            Removeedge <from>,<to>\n");
+           "            Removeedge <from>,<to>\n\n"
+           "enter command:\n");
 }
 
 void executeCommand(char *input)
@@ -297,10 +309,11 @@ void executeCommand(char *input)
         }
         else
         {
-            printf("unrecognized command aaa%saaa\n", token);
+            printf("unrecognized command %s\n", token);
             usage();
         }
     }
+    printf("enter command:\n");
 }
 
 void getAndExecuteCommand()
@@ -310,12 +323,21 @@ void getAndExecuteCommand()
     printCommands();
     while (1)
     {
-        printf("enter command:\n");
-        if (fgets(input, sizeof(input) - 1, stdin) == NULL)
+        ssize_t bytesRead;
+        bytesRead = read(STDIN_FILENO, input, sizeof(input) - 1);
+        if (bytesRead < 0)
         {
-            printf("error reading input \n");
-            break;
+            perror("read");
+            exit(EXIT_FAILURE);
         }
+        input[bytesRead] = '\0';
+        //// printf("enter command:\n");
+
+        // if (fgets(input, sizeof(input) - 1, stdin) == NULL)
+        // {
+        //     printf("error reading input \n");
+        //     break;
+        // }
         executeCommand(input);
 
 #if 0        

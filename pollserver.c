@@ -111,15 +111,15 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
     (*fd_count)--;
 }
 
-int dup_stdout(int fd)
+int dup_std(int fd, int std)
 {
-    int saved_stdout = dup(STDOUT_FILENO);
+    int saved_stdout = dup(std);
     if (saved_stdout < 0)
     {
         perror("dup");
         exit(EXIT_FAILURE);
     }
-    if (dup2(fd, STDOUT_FILENO) < 0)
+    if (dup2(fd, std) < 0)
     {
         perror("dup2");
         exit(EXIT_FAILURE);
@@ -127,9 +127,9 @@ int dup_stdout(int fd)
     return saved_stdout;
 }
 
-void undup_stdout(int saved_stdout)
+void undup_std(int saved_stdout, int std)
 {
-    if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+    if (dup2(saved_stdout, std) < 0)
     {
         perror("dup2");
         exit(EXIT_FAILURE);
@@ -211,9 +211,11 @@ void chat()
                                          get_in_addr((struct sockaddr *)&remoteaddr),
                                          remoteIP, INET6_ADDRSTRLEN),
                                newfd);
-                        int saved_stdout = dup_stdout(newfd);
+                        int saved_stdout = dup_std(newfd, STDOUT_FILENO);
+                        int saved_stdin = dup_std(newfd, STDIN_FILENO);
                         printCommands();
-                        undup_stdout(saved_stdout);
+                        undup_std(saved_stdout, STDOUT_FILENO);
+                        undup_std(saved_stdin, STDIN_FILENO);
                     }
                 }
                 else
@@ -243,9 +245,12 @@ void chat()
                     else
                     {
                         buf[nbytes]='\0';
-                        int saved_stdout = dup_stdout(sender_fd);
+                        int saved_stdout = dup_std(sender_fd, STDOUT_FILENO);
+                        int saved_stdin = dup_std(sender_fd, STDIN_FILENO);
+
                         executeCommand(buf);
-                        undup_stdout(saved_stdout);
+                        undup_std(saved_stdout, STDOUT_FILENO);
+                        undup_std(saved_stdin, STDIN_FILENO);
 
                     }
                 } // END handle data from client
