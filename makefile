@@ -5,10 +5,13 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++11
 
 # Define the target executable
-TARGET = bin/program
+TARGET = bin/kosaraju
 
 # List of source files
 SRCS = kosaraju.c pollserver.c
+
+# List of header files
+HEADERS = kosaraju.h pollserver.h
 
 # Define the directory for object files
 OBJDIR = bin
@@ -23,9 +26,14 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
+
+
 # Rule to compile source files into object files
-$(OBJDIR)/%.o: %.c
+$(OBJDIR)/%.o: %.c $(HEADERS) | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
 # Clean up generated files
 clean:

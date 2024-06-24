@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "kosaraju.h"
+#include "pollserver.h"
 
 typedef struct Node
 {
@@ -29,7 +31,9 @@ void usage(void)
            "                User should enter <edges> pairs of directed edges\n"
            "            Kosaraju\n"
            "            Newedge <from>,<to>\n"
-           "            Removeedge <from>,<to>\n");
+           "            Removeedge <from>,<to>\n"
+           "        3: run as \"chat\" server. connected clients can enter commands as in 2\n"
+           );
 
     exit(-1);
 }
@@ -223,24 +227,87 @@ Graph *getNewGraph(int vertices, int edges)
     return globalGraph;
 }
 
-void getParameters(char **param1, char **param2)
+void getParameters(char **param1, char **param2, char **saveptr)
 {
-    char *input = strtok(NULL, " ");
+    char *input = strtok_r(NULL, " ", saveptr);
 
-    *param1 = strtok(input, ",\n");
-    *param2 = strtok(NULL, ",");
+    *param1 = strtok_r(input, ",\n", saveptr);
+    *param2 = strtok_r(NULL, ",", saveptr);
 }
 
-void getAndExecuteCommand()
+void printCommands()
 {
-    char *param1, *param2;
-    char input[1024];
-    printf("enter one of thefollowing commands:\n"
+    printf("enter one of the following commands:\n"
            "            Newgraph <verttices>,<edges>\n"
            "                User should enter <edges> pairs of directed edges\n"
            "            Kosaraju\n"
            "            Newedge <from>,<to>\n"
            "            Removeedge <from>,<to>\n");
+}
+
+void executeCommand(char *input)
+{
+    char *param1, *param2, *saveptr;
+
+    char *token = strtok_r(input, " \n", &saveptr);
+
+    if (token != NULL)
+    {
+        // printf("the token: %s\n", token);
+        if (strcmp(token, "Newgraph") == 0)
+        {
+            getParameters(&param1, &param2, &saveptr);
+            globalGraph = getNewGraph(atoi(param1), atoi(param2));
+            // printf("parameters: %s, %s\n", param1, param2);
+        }
+        else if (strcmp(token, "Kosaraju") == 0)
+        {
+            if (globalGraph)
+            {
+                kosaraju(globalGraph);
+            }
+            else
+            {
+                printf("Graph does not exist, please create a graph\n");
+            }
+        }
+        else if (strcmp(token, "Newedge") == 0)
+        {
+            if (globalGraph)
+            {
+                getParameters(&param1, &param2, &saveptr);
+                addEdge(globalGraph, atoi(param1), atoi(param2));
+            }
+            else
+            {
+                printf("Graph does not exist, please create a graph\n");
+            }
+        }
+        else if (strcmp(token, "Removeedge") == 0)
+        {
+            if (globalGraph)
+            {
+                getParameters(&param1, &param2, &saveptr);
+                removeEdge(globalGraph, atoi(param1), atoi(param2));
+            }
+            else
+            {
+                printf("Graph does not exist, please create a graph\n");
+            }
+        }
+        else
+        {
+            printf("unrecognized command aaa%saaa\n", token);
+            usage();
+        }
+    }
+}
+
+void getAndExecuteCommand()
+{
+    // char *param1, *param2;
+    char input[1024];
+    printCommands();
     while (1)
     {
         printf("enter command:\n");
@@ -249,6 +316,9 @@ void getAndExecuteCommand()
             printf("error reading input \n");
             break;
         }
+        executeCommand(input);
+
+#if 0        
         // printf("user input: %s\n", input);
         char *token = strtok(input, " \n");
 
@@ -302,6 +372,7 @@ void getAndExecuteCommand()
                 usage();
             }
         }
+#endif
     }
 }
 
@@ -325,6 +396,9 @@ int main(int argc, char *argv[])
         break;
     case 2:
         getAndExecuteCommand();
+        break;
+    case 3:
+        chat();
         break;
     default:
         usage();
