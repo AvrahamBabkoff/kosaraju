@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 
 typedef struct Node
@@ -14,6 +16,23 @@ typedef struct Graph
     Node **adjLists;
     bool *visited;
 } Graph;
+
+Graph *globalGraph = NULL;
+
+void usage(void)
+{
+    printf("Usage: kosaraju <stage>\n"
+           "    valid values of <stage>:\n"
+           "        1: user enters graph vertices and edges, followed by a list of the directed edges\n"
+           "        2: user can enter following commands:\n"
+           "            Newgraph <verttices>,<edges>\n"
+           "                User should enter <edges> pairs of directed edges\n"
+           "            Kosaraju\n"
+           "            Newedge <from>,<to>\n"
+           "            Removeedge <from>,<to>\n");
+
+    exit(-1);
+}
 
 Node *createNode(int vertex)
 {
@@ -57,6 +76,33 @@ void freeGraph(Graph *graph)
     free(graph->visited);
     free(graph);
 }
+
+void removeEdge(Graph *graph, int src, int dest)
+{
+    Node *temp = graph->adjLists[src - 1];
+    Node *prev = NULL;
+    if (temp && temp->vertex == dest - 1)
+    {
+        // printf("found node to remove\n");
+        graph->adjLists[src - 1] = temp->next;
+        free(temp);
+    }
+    else
+    {
+        while (temp)
+        {
+            prev = temp;
+            temp = temp->next;
+            if (temp && temp->vertex == dest - 1)
+            {
+                prev->next = temp->next;
+                free(temp);
+                break;
+            }
+        }
+    }
+}
+
 void addEdge(Graph *graph, int src, int dest)
 {
     // printf("adding edge %d, %d\n", src, dest);
@@ -123,7 +169,12 @@ void kosaraju(Graph *graph)
     int vertices = graph->numVertices;
     int stack[vertices];
     int stackIndex = 0;
+    for (int i = 0; i < vertices; i++)
+    {
+        graph->visited[i] = false;
+    }
 
+    printf("Strongly Connected Components:\n");
     for (int i = 0; i < vertices; i++)
     {
         if (!graph->visited[i])
@@ -151,26 +202,135 @@ void kosaraju(Graph *graph)
     freeGraph(transpose);
 }
 
-int main()
+Graph *getNewGraph(int vertices, int edges)
 {
-    int vertices, edges;
-    printf("Enter the number of vertices and number of edges:");
-    scanf("%d %d", &vertices, &edges);
-
-    Graph *graph = createGraph(vertices);
-
-    printf("Enter the edges (src dest) format:\n");
-    for (int i = 0; i < edges; i++)
+    if (globalGraph != NULL)
     {
-        int src, dest;
-        printf("Edge %d: ", i + 1);
-        scanf("%d %d", &src, &dest);
-        addEdge(graph, src, dest);
+        freeGraph(globalGraph);
+        globalGraph = NULL;
+    }
+    globalGraph = createGraph(vertices);
+    if (edges > 0)
+    {
+        printf("enter the %d directed edges as pairs of vertices <from> <to>:\n", edges);
+        for (int i = 0; i < edges; i++)
+        {
+            int src, dest;
+            scanf("%d %d", &src, &dest);
+            addEdge(globalGraph, src, dest);
+        }
+    }
+    return globalGraph;
+}
+
+void getParameters(char **param1, char **param2)
+{
+    char *input = strtok(NULL, " ");
+
+    *param1 = strtok(input, ",\n");
+    *param2 = strtok(NULL, ",");
+}
+
+void getAndExecuteCommand()
+{
+    char *param1, *param2;
+    char input[1024];
+    printf("enter one of thefollowing commands:\n"
+           "            Newgraph <verttices>,<edges>\n"
+           "                User should enter <edges> pairs of directed edges\n"
+           "            Kosaraju\n"
+           "            Newedge <from>,<to>\n"
+           "            Removeedge <from>,<to>\n");
+    while (1)
+    {
+        printf("enter command:\n");
+        if (fgets(input, sizeof(input) - 1, stdin) == NULL)
+        {
+            printf("error reading input \n");
+            break;
+        }
+        // printf("user input: %s\n", input);
+        char *token = strtok(input, " \n");
+
+        if (token != NULL)
+        {
+            // printf("the token: %s\n", token);
+            if (strcmp(token, "Newgraph") == 0)
+            {
+                getParameters(&param1, &param2);
+                globalGraph = getNewGraph(atoi(param1), atoi(param2));
+                // printf("parameters: %s, %s\n", param1, param2);
+            }
+            else if (strcmp(token, "Kosaraju") == 0)
+            {
+                if (globalGraph)
+                {
+                    kosaraju(globalGraph);
+                }
+                else
+                {
+                    printf("Graph does not exist, please create a graph\n");
+                }
+            }
+            else if (strcmp(token, "Newedge") == 0)
+            {
+                if (globalGraph)
+                {
+                    getParameters(&param1, &param2);
+                    addEdge(globalGraph, atoi(param1), atoi(param2));
+                }
+                else
+                {
+                    printf("Graph does not exist, please create a graph\n");
+                }
+            }
+            else if (strcmp(token, "Removeedge") == 0)
+            {
+                if (globalGraph)
+                {
+                    getParameters(&param1, &param2);
+                    removeEdge(globalGraph, atoi(param1), atoi(param2));
+                }
+                else
+                {
+                    printf("Graph does not exist, please create a graph\n");
+                }
+            }
+            else
+            {
+                printf("unrecognized command aaa%saaa\n", token);
+                usage();
+            }
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    int vertices, edges, stage;
+
+    if (argc != 2)
+    {
+        usage();
+    }
+    stage = atoi(argv[1]);
+    switch (stage)
+    {
+    case 1:
+        printf("Enter the number of vertices and number of edges:");
+        scanf("%d %d", &vertices, &edges);
+        globalGraph = getNewGraph(vertices, edges);
+        kosaraju(globalGraph);
+        freeGraph(globalGraph);
+        break;
+    case 2:
+        getAndExecuteCommand();
+        break;
+    default:
+        usage();
     }
 
     printf("Strongly Connected Components:\n");
-    kosaraju(graph);
-    freeGraph(graph);
 
     return 0;
 }
