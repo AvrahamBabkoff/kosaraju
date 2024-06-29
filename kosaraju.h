@@ -1,8 +1,8 @@
-#ifndef KOSARAJU_H
-#define KOSARAJU_H
+#ifndef __KOSARAJU_H__
+#define __KOSARAJU_H__
 
 void executeCommand(char *command);
 void printCommands();
 
 
-#endif // KOSARAJU_H
+#endif // __KOSARAJU_H__

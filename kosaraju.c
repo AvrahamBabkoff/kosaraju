@@ -2,9 +2,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include "kosaraju.h"
 #include "pollserver.h"
+#include "poll_reactor.h"
+#include "tcp_reactor.h"
+#include "tcp_threads.h"
+
+#define PORT "9034"
 
 typedef struct Node
 {
@@ -398,8 +402,43 @@ void getAndExecuteCommand()
     }
 }
 
+
+// void func1(int fd, void *reactor)
+// {
+//     printf("in func1, got fd %d", fd);
+// }
+
+// void func2(int fd, void *reactor)
+// {
+//     printf("in func2, got fd %d", fd);
+// }
+
+// void func3(int fd, void *reactor)
+// {
+//     printf("in func3, got fd %d", fd);
+// }
+
+// void testReactor(void *r)
+// {
+//     addFdToReactor(r, 1, func1);
+//     addFdToReactor(r, 2, func2);
+//     addFdToReactor(r, 3, func3);
+//     printReactor(r);
+//     addFdToReactor(r, 5, func1);
+//     addFdToReactor(r, 6, func2);
+//     addFdToReactor(r, 4, func3);
+//     printReactor(r);
+//     removeFdFromReactor(r, 1);
+//     printReactor(r);
+//     removeFdFromReactor(r, 3);
+//     printReactor(r);
+//     removeFdFromReactor(r, 2);
+//     printReactor(r);
+// }
+
 int main(int argc, char *argv[])
 {
+    void *r;
     int vertices, edges, stage;
 
     if (argc != 2)
@@ -422,6 +461,17 @@ int main(int argc, char *argv[])
     case 3:
         chat();
         break;
+    case 4:
+        r = createtReactor();
+        createAndAddListnerToReactor(PORT, r);
+        startReactor(r);
+        printf("reactor %ld\n", (long int)r);
+        // testReactor(r);
+        break;
+    case 5:
+        printf("execution mode: create thread per connected client\n");
+        acceptClients(PORT);
+        break;
     default:
         usage();
     }
@@ -430,3 +480,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+

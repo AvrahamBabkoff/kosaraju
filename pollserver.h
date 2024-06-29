@@ -1,6 +1,6 @@
-#ifndef POLLSERVER_H
-#define POLLSERVER_H
+#ifndef __POLLSERVER_H__
+#define __POLLSERVER_H__
 
 void chat();
 
-#endif // POLLSERVER_H
+#endif // __POLLSERVER_H__
