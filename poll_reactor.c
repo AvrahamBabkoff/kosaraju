@@ -31,7 +31,7 @@ struct reactor
 void *createtReactor()
 {
     printf("Hello again from reactor library!!!\n");
-    struct reactor *newReactor = (reactor *)malloc(sizeof(reactor));
+    struct reactor *newReactor = (struct reactor *)malloc(sizeof(struct reactor));
     // newReactor->pfds = (struct pollfd *)malloc(sizeof(struct pollfd) * INITIAL_NUM_OF_FDS);
     newReactor->reactorHandlers = (struct ReactorHandler *)malloc(sizeof(struct ReactorHandler) * INITIAL_NUM_OF_FDS);
     newReactor->fd_count = 0;

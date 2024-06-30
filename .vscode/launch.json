@@ -2,11 +2,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "Debug C Program",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}", // Match the name used in tasks.json
-            "args": [1],
+            "program": "${fileDirname}/${fileBasenameNoExtension}",  // Path to your compiled program
+            "args": ["5"],  // Arguments to pass to the main method
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -19,18 +19,12 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc build active file", // Ensure this matches the label in tasks.json
-            "miDebuggerPath": "/usr/bin/gdb",
+            "preLaunchTask": "build",  // Optional: Task to run before launching the debugger
+            "miDebuggerPath": "/usr/bin/gdb",  // Path to gdb
             "logging": {
                 "trace": true,
                 "traceResponse": true,
-                "engineLogging": true,
-                "programOutput": true,
-                "exceptions": true
-            },
-            "launchCompleteCommand": "exec-run",
-            "sourceFileMap": {
-                "/usr/src/debug": "${workspaceFolder}"
+                "engineLogging": true
             }
         }
     ]

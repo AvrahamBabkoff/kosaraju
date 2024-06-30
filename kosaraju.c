@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "kosaraju.h"
 #include "pollserver.h"
 #include "poll_reactor.h"

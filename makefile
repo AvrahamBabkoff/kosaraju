@@ -1,8 +1,8 @@
 # Define the compiler
-CXX = g++
+CXX = gcc
 
 # Define compiler flags
-CXXFLAGS = -Wall -Wextra -std=c++11
+CXXFLAGS = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
 
 # Define the target executable
 TARGET = bin/kosaraju

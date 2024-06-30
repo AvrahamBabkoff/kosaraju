@@ -2,13 +2,18 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: gcc build active file",
+            "label": "build",
             "command": "/usr/bin/gcc",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
                 "kosaraju.c",
                 "pollserver.c",
+                "tcp_reactor.c", 
+                "tcp_dup.c", 
+                "listner.c", 
+                "tcp_threads.c",
+                "poll_reactor.c",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],
