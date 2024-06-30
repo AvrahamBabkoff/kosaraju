@@ -12,7 +12,7 @@ SRCS = kosaraju.c pollserver.c tcp_reactor.c tcp_dup.c listner.c tcp_threads.c
 
 AR = ar
 
-LIB_NAME = bin/reactor.a
+LIB_NAME = bin/async_engine.a
 
 # List of library source files
 LIB_SRCS = poll_reactor.c
@@ -38,7 +38,7 @@ $(LIB_NAME): $(LIB_OBJS)
 
 # Rule to link object files to create the executable
 $(TARGET): $(OBJS) $(LIB_NAME)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB_NAME)
+	$(CXX) $(CXXFLAGS) -o $@ $^ 
 
 
 
