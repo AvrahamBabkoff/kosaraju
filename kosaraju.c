@@ -91,7 +91,6 @@ void removeEdge(Graph *graph, int src, int dest)
     Node *prev = NULL;
     if (temp && temp->vertex == dest - 1)
     {
-        // printf("found node to remove\n");
         graph->adjLists[src - 1] = temp->next;
         free(temp);
     }
@@ -113,7 +112,6 @@ void removeEdge(Graph *graph, int src, int dest)
 
 void addEdge(Graph *graph, int src, int dest)
 {
-    // printf("adding edge %d, %d\n", src, dest);
     Node *newNode = createNode(dest - 1);
     newNode->next = graph->adjLists[src - 1];
     graph->adjLists[src - 1] = newNode;
@@ -270,12 +268,10 @@ void executeCommand(char *input)
 
     if (token != NULL)
     {
-        // printf("the token: %s\n", token);
         if (strcmp(token, "Newgraph") == 0)
         {
             getParameters(&param1, &param2, &saveptr);
             globalGraph = getNewGraph(atoi(param1), atoi(param2));
-            // printf("parameters: %s, %s\n", param1, param2);
         }
         else if (strcmp(token, "Kosaraju") == 0)
         {
@@ -323,7 +319,6 @@ void executeCommand(char *input)
 
 void getAndExecuteCommand()
 {
-    // char *param1, *param2;
     char input[1024];
     printCommands();
     while (1)
@@ -336,106 +331,12 @@ void getAndExecuteCommand()
             exit(EXIT_FAILURE);
         }
         input[bytesRead] = '\0';
-        //// printf("enter command:\n");
-
-        // if (fgets(input, sizeof(input) - 1, stdin) == NULL)
-        // {
-        //     printf("error reading input \n");
-        //     break;
-        // }
         executeCommand(input);
 
-#if 0        
-        // printf("user input: %s\n", input);
-        char *token = strtok(input, " \n");
-
-        if (token != NULL)
-        {
-            // printf("the token: %s\n", token);
-            if (strcmp(token, "Newgraph") == 0)
-            {
-                getParameters(&param1, &param2);
-                globalGraph = getNewGraph(atoi(param1), atoi(param2));
-                // printf("parameters: %s, %s\n", param1, param2);
-            }
-            else if (strcmp(token, "Kosaraju") == 0)
-            {
-                if (globalGraph)
-                {
-                    kosaraju(globalGraph);
-                }
-                else
-                {
-                    printf("Graph does not exist, please create a graph\n");
-                }
-            }
-            else if (strcmp(token, "Newedge") == 0)
-            {
-                if (globalGraph)
-                {
-                    getParameters(&param1, &param2);
-                    addEdge(globalGraph, atoi(param1), atoi(param2));
-                }
-                else
-                {
-                    printf("Graph does not exist, please create a graph\n");
-                }
-            }
-            else if (strcmp(token, "Removeedge") == 0)
-            {
-                if (globalGraph)
-                {
-                    getParameters(&param1, &param2);
-                    removeEdge(globalGraph, atoi(param1), atoi(param2));
-                }
-                else
-                {
-                    printf("Graph does not exist, please create a graph\n");
-                }
-            }
-            else
-            {
-                printf("unrecognized command aaa%saaa\n", token);
-                usage();
-            }
-        }
-#endif
     }
 }
 
 
-// void func1(int fd, void *reactor)
-// {
-//     printf("in func1, got fd %d", fd);
-// }
-
-// void func2(int fd, void *reactor)
-// {
-//     printf("in func2, got fd %d", fd);
-// }
-
-// void func3(int fd, void *reactor)
-// {
-//     printf("in func3, got fd %d", fd);
-// }
-
-// void testReactor(void *r)
-// {
-//     addFdToReactor(r, 1, func1);
-//     addFdToReactor(r, 2, func2);
-//     addFdToReactor(r, 3, func3);
-//     printReactor(r);
-//     addFdToReactor(r, 5, func1);
-//     addFdToReactor(r, 6, func2);
-//     addFdToReactor(r, 4, func3);
-//     printReactor(r);
-//     removeFdFromReactor(r, 1);
-//     printReactor(r);
-//     removeFdFromReactor(r, 3);
-//     printReactor(r);
-//     removeFdFromReactor(r, 2);
-//     printReactor(r);
-// }
 
 int main(int argc, char *argv[])
 {
@@ -467,7 +368,6 @@ int main(int argc, char *argv[])
         createAndAddListnerToReactor(PORT, r);
         startReactor(r);
         printf("reactor %ld\n", (long int)r);
-        // testReactor(r);
         break;
     case 5:
         printf("execution mode: create thread per connected client\n");

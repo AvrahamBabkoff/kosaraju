@@ -15,7 +15,7 @@
                 "tcp_threads.c",
                 "poll_reactor.c",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/debug/${fileBasenameNoExtension}"
             ],
             "options": {
                 "cwd": "${fileDirname}"
