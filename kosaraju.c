@@ -262,7 +262,7 @@ void printCommands()
 
 void executeCommand(char *input)
 {
-    char *param1, *param2, *saveptr;
+    char *param1 = NULL, *param2 = NULL, *saveptr;
 
     char *token = strtok_r(input, " \n", &saveptr);
 
@@ -271,7 +271,14 @@ void executeCommand(char *input)
         if (strcmp(token, "Newgraph") == 0)
         {
             getParameters(&param1, &param2, &saveptr);
-            globalGraph = getNewGraph(atoi(param1), atoi(param2));
+            if (param1 == NULL || param2 == NULL)
+            {
+                printf("Must specify verttices and edges\n");
+            }
+            else
+            {
+                globalGraph = getNewGraph(atoi(param1), atoi(param2));
+            }
         }
         else if (strcmp(token, "Kosaraju") == 0)
         {
@@ -289,7 +296,16 @@ void executeCommand(char *input)
             if (globalGraph)
             {
                 getParameters(&param1, &param2, &saveptr);
-                addEdge(globalGraph, atoi(param1), atoi(param2));
+
+                if (param1 == NULL || param2 == NULL)
+                {
+                    printf("Must specify both endpoints of the new edge\n");
+                }
+                else
+                {
+
+                    addEdge(globalGraph, atoi(param1), atoi(param2));
+                }
             }
             else
             {
@@ -301,7 +317,16 @@ void executeCommand(char *input)
             if (globalGraph)
             {
                 getParameters(&param1, &param2, &saveptr);
-                removeEdge(globalGraph, atoi(param1), atoi(param2));
+
+                if (param1 == NULL || param2 == NULL)
+                {
+                    printf("Must specify both endpoints of the edge to remove\n");
+                }
+                else
+                {
+
+                    removeEdge(globalGraph, atoi(param1), atoi(param2));
+                }
             }
             else
             {
@@ -332,11 +357,8 @@ void getAndExecuteCommand()
         }
         input[bytesRead] = '\0';
         executeCommand(input);
-
     }
 }
-
-
 
 int main(int argc, char *argv[])
 {
@@ -381,4 +403,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
