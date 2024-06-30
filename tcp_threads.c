@@ -8,7 +8,7 @@
 #include "kosaraju.h"
 #include "listner.h"
 
-pthread_mutex_t _mutex;
+pthread_mutex_t _mutex  = PTHREAD_MUTEX_INITIALIZER;
 
 void *processClient(void *arg)
 {
@@ -59,7 +59,6 @@ void *processClient(void *arg)
 
 void acceptAndCreateThreadPerClients(const char *port)
 {
-    pthread_mutex_init(&_mutex, NULL);
     struct sockaddr_in address;
     int addrlen = sizeof(address);
 

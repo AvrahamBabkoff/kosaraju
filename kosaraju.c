@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include "kosaraju.h"
 #include "pollserver.h"
 #include "poll_reactor.h"
@@ -10,6 +11,10 @@
 #include "tcp_threads.h"
 
 #define PORT "9034"
+
+pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
+
+bool sccThreasholdChanged = false;
 
 typedef struct Node
 {
@@ -43,6 +48,33 @@ void usage(void)
     exit(-1);
 }
 
+void *MonitorLargeSCCChanges(void *arg)
+{
+    (void)arg;
+
+    while (1)
+    {
+        printf("going to lock the mutex\n");
+        pthread_mutex_lock(&_mutex);
+        printf("got lock on mutex\n");
+        if (!sccThreasholdChanged)
+        {
+            printf("going to wait on condition\n");
+
+            pthread_cond_wait(&_cond, &_mutex);
+            printf("returned from wait on condition\n");
+        }
+        if (sccThreasholdChanged)
+        {
+            printf(globalGraph->maxInSccMoreThan50Percent ? "At least 50%% of the graph belongs to the same SCC\n" : "At least 50%% of the graph no longer belongs to the same SCC\n");
+            sccThreasholdChanged = false;
+        }
+        printf("going to unlock the mitext\n");
+        pthread_mutex_unlock(&_mutex);
+    }
+
+    return NULL;
+}
 Node *createNode(int vertex)
 {
     Node *newNode = (Node *)malloc(sizeof(Node));
@@ -216,16 +248,24 @@ void kosaraju(Graph *graph)
         }
     }
     // printf("largest scc has %d vertices\n", maxVerticesInScc);
+    // pthread_mutex_lock(&_mutex);
     if (maxVerticesInScc > (double)graph->numVertices / 2.0 && !graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = true;
-        printf("At least 50%% of the graph belongs to the same SCC\n");
+        sccThreasholdChanged = true;
+        // printf("At least 50%% of the graph belongs to the same SCC\n");
     }
     else if (maxVerticesInScc <= (double)graph->numVertices / 2.0 && graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = false;
-        printf("At least 50%% of the graph no longer belongs to the same SCC\n");
+        sccThreasholdChanged = true;
+        // printf("At least 50%% of the graph no longer belongs to the same SCC\n");
     }
+    if (sccThreasholdChanged)
+    {
+        pthread_cond_signal(&_cond);
+    }
+    // pthread_mutex_unlock(&_mutex);
     freeGraph(transpose);
 }
 
@@ -383,6 +423,7 @@ void getAndExecuteCommand()
 
 int main(int argc, char *argv[])
 {
+    pthread_t thread;
     void *r;
     int vertices, edges, stage;
 
@@ -412,6 +453,10 @@ int main(int argc, char *argv[])
         startReactor(r);
         printf("reactor %ld\n", (long int)r);
         break;
+    case 6:
+        printf("going to create thread\n");
+        pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
+        __attribute__ ((fallthrough));
     case 5:
         printf("execution mode: create thread per connected client\n");
         acceptAndCreateThreadPerClients(PORT);
