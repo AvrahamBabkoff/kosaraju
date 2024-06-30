@@ -153,8 +153,12 @@ Graph *getTranspose(Graph *graph)
     return transpose;
 }
 
-void dfsPrint(Graph *graph, int vertex)
+void dfsPrint(Graph *graph, int vertex, int *cnt)
 {
+    if (cnt)
+    {
+        ++(*cnt);
+    }
     graph->visited[vertex] = true;
     printf("%d ", vertex + 1);
 
@@ -164,7 +168,7 @@ void dfsPrint(Graph *graph, int vertex)
         int adjVertex = temp->vertex;
         if (!graph->visited[adjVertex])
         {
-            dfsPrint(graph, adjVertex);
+            dfsPrint(graph, adjVertex, cnt);
         }
         temp = temp->next;
     }
@@ -175,6 +179,8 @@ void kosaraju(Graph *graph)
     int vertices = graph->numVertices;
     int stack[vertices];
     int stackIndex = 0;
+    int verticesInScc = 0;
+    int maxVerticesInScc = 0;
     for (int i = 0; i < vertices; i++)
     {
         graph->visited[i] = false;
@@ -201,9 +207,18 @@ void kosaraju(Graph *graph)
         int v = stack[--stackIndex];
         if (!transpose->visited[v])
         {
-            dfsPrint(transpose, v);
+            verticesInScc = 0;
+            dfsPrint(transpose, v, &verticesInScc);
             printf("\n");
+            maxVerticesInScc = verticesInScc > maxVerticesInScc ? verticesInScc : maxVerticesInScc;
         }
+    }
+    // printf("largest scc has %d vertices\n", maxVerticesInScc);
+    if (maxVerticesInScc >= graph->numVertices / 2)
+    {
+        printf("At least 50%% of the graph belongs to the same SCC\n");
+    } else {
+
     }
     freeGraph(transpose);
 }
