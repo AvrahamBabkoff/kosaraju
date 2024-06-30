@@ -22,6 +22,7 @@ typedef struct Graph
     int numVertices;
     Node **adjLists;
     bool *visited;
+    bool maxInSccMoreThan50Percent;
 } Graph;
 
 Graph *globalGraph = NULL;
@@ -54,6 +55,7 @@ Graph *createGraph(int vertices)
 {
     Graph *graph = (Graph *)malloc(sizeof(Graph));
     graph->numVertices = vertices;
+    graph->maxInSccMoreThan50Percent = false;
 
     graph->adjLists = (Node **)malloc(vertices * sizeof(Node *));
     graph->visited = (bool *)malloc(vertices * sizeof(bool));
@@ -214,11 +216,15 @@ void kosaraju(Graph *graph)
         }
     }
     // printf("largest scc has %d vertices\n", maxVerticesInScc);
-    if (maxVerticesInScc >= graph->numVertices / 2)
+    if (maxVerticesInScc > (double)graph->numVertices / 2.0 && !graph->maxInSccMoreThan50Percent)
     {
+        graph->maxInSccMoreThan50Percent = true;
         printf("At least 50%% of the graph belongs to the same SCC\n");
-    } else {
-
+    }
+    else if (maxVerticesInScc <= (double)graph->numVertices / 2.0 && graph->maxInSccMoreThan50Percent)
+    {
+        graph->maxInSccMoreThan50Percent = false;
+        printf("At least 50%% of the graph no longer belongs to the same SCC\n");
     }
     freeGraph(transpose);
 }
