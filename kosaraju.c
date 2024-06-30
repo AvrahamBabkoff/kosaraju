@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
         break;
     case 5:
         printf("execution mode: create thread per connected client\n");
-        acceptClients(PORT);
+        acceptAndCreateThreadPerClients(PORT);
         break;
     default:
         usage();

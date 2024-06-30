@@ -57,7 +57,7 @@ void *processClient(void *arg)
     return NULL;
 }
 
-void acceptClients(const char *port)
+void acceptAndCreateThreadPerClients(const char *port)
 {
     pthread_mutex_init(&_mutex, NULL);
     struct sockaddr_in address;
