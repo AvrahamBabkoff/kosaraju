@@ -13,6 +13,7 @@
 #include "proactor.h"
 
 #define POLL_TIMEOUT_INFINITE -1
+#define INITIAL_NUM_OF_CLIENTS 10
 
 struct proactor
 {
@@ -23,8 +24,6 @@ struct proactor
 
 struct proactor_client
 {
-    // identifier of this client
-    int id;
     // client socket
     int socketfd;
     // method to invoke with socketfd
@@ -33,12 +32,19 @@ struct proactor_client
     int pipe_write;
 };
 
+struct proactor_client_thread
+{
+    struct proactor_client client;
+    pthread_t thread;
+};
+
 void *invokeProactorFunc(void *arg)
 {
-    struct proactor_client* prct_client = (struct proactor_client*)arg;
+    struct proactor_client *prct_client = (struct proactor_client *)arg;
     prct_client->func(prct_client->socketfd);
     // if here, we signal the main proactor thread that we are terminating
-    write(prct_client->pipe_write, &prct_client->id, sizeof(prct_client->id));
+    write(prct_client->pipe_write, &prct_client->socketfd, sizeof(prct_client->socketfd));
+    return NULL;
 }
 
 void *proactorMainThread(void *arg)
@@ -56,7 +62,9 @@ void *proactorMainThread(void *arg)
     // add read end of pipe
     fds[1].fd = prct->pipe_fds[0];
     fds[1].events = POLLIN;
-
+    int clients_size = INITIAL_NUM_OF_CLIENTS;
+    int clients_count = 0;
+    struct proactor_client_thread *clients = (struct proactor_client_thread *)malloc(sizeof(struct proactor_client_thread) * clients_size);
     while (1)
     {
         int ret = poll(fds, 2, POLL_TIMEOUT_INFINITE);
@@ -77,16 +85,72 @@ void *proactorMainThread(void *arg)
             else
             {
                 pthread_t thread;
-                if (pthread_create(&thread, NULL, invokeProactorFunc, (void *)(long)client) != 0)
+                if (clients_size == clients_count)
+                {
+                    clients_size *= 2;
+                    clients = (struct proactor_client_thread *)realloc(clients, sizeof(struct proactor_client_thread) * clients_size);
+                }
+                clients[clients_count].client.socketfd = new_socket;
+                clients[clients_count].client.pipe_write = prct->pipe_fds[1];
+                clients[clients_count].client.func = prct->func;
+                if (pthread_create(&thread, NULL, invokeProactorFunc, &(clients[clients_count].client)) != 0)
                 {
                     perror("pthread_create");
                     break;
                 }
+                clients[clients_count].thread = thread;
+                ++clients_count;
+            }
+        }
+        else if (fds[1].revents & POLLIN)
+        {
+            int fd;
+            read(prct->pipe_fds[0], &fd, sizeof(fd));
+            if (fd >= 0)
+            {
+                // signalled by client, find client slot
+                for (int i = 0; i < clients_count; i++)
+                {
+                    if (fd == clients[i].client.socketfd)
+                    {
+                        clients[i] = clients[clients_count - 1];
+                        --clients_count;
+                        close(fd);
+                    }
+                }
+            }
+            else
+            {
+                // we were signalled to shutdown, go over all clients and shutdown the sockets
+                for (int i = 0; i < clients_count; i++)
+                {
+                    shutdown(clients[i].client.socketfd, SHUT_RDWR);
+                }
+                for (int i = 0; i < clients_count; i++)
+                {
+                    struct timespec ts;
+                    int s;
+
+                    if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
+                    {
+                        /* Handle error */
+                    }
+                    ts.tv_sec += 2;
+
+                    s = pthread_timedjoin_np(clients[i].thread, NULL, &ts);
+                    if (s != 0)
+                    {
+                        printf("cancelling thread %ld", clients[i].thread);
+                        pthread_cancel(clients[i].thread);
+                    }
+                }
+                break;
             }
         }
     }
     return NULL;
 }
+
 void *startProactor(int sockfd, proactorFunc threadFunc)
 {
     struct proactor *prct = (struct proactor *)malloc(sizeof(struct proactor));
@@ -101,7 +165,7 @@ void *startProactor(int sockfd, proactorFunc threadFunc)
     else
     {
         pthread_t thread;
-        if (pthread_create(&thread, NULL, proactorMainThread, NULL) != 0)
+        if (pthread_create(&thread, NULL, proactorMainThread, prct) != 0)
         {
             perror("pthread_create");
             close(prct->pipe_fds[0]);
@@ -112,4 +176,12 @@ void *startProactor(int sockfd, proactorFunc threadFunc)
     }
 
     return prct;
+}
+
+int stopProactor(void *proactor)
+{
+    struct proactor *prct = (struct proactor *)proactor;
+    int fd = -1;
+    write(prct->pipe_fds[1], &fd, sizeof(fd));
+    return 0;
 }

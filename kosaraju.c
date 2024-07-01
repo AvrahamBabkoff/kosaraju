@@ -279,7 +279,7 @@ Graph *getNewGraph(int vertices, int edges)
     globalGraph = createGraph(vertices);
     if (edges > 0)
     {
-        printf("enter the %d directed edges as pairs of vertices <from> <to>:\n", edges);
+        printf("enter the %d directed edges as pairs of vertices <from>,<to>:\n", edges);
         for (int i = 0; i < edges; i++)
         {
             char input[1024];
@@ -436,36 +436,44 @@ int main(int argc, char *argv[])
     {
     case 1:
         printf("Enter the number of vertices and number of edges:");
-        scanf("%d %d", &vertices, &edges);
+        scanf("%d,%d", &vertices, &edges);
         globalGraph = getNewGraph(vertices, edges);
         kosaraju(globalGraph);
         freeGraph(globalGraph);
         break;
-    case 2:
+    case 3:
+        printf("execution mode: interaction\n");
         getAndExecuteCommand();
         break;
-    case 3:
+    case 4:
+        printf("execution mode: multi user\n");
         chat();
         break;
-    case 4:
+    case 6:
+        printf("execution mode: multi user reactor\n");
         r = createtReactor();
         createAndAddListnerToReactor(PORT, r);
         startReactor(r);
         printf("reactor %ld\n", (long int)r);
         break;
-    case 6:
-        printf("going to create thread\n");
-        pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
-        __attribute__ ((fallthrough));
-    case 5:
-        printf("execution mode: create thread per connected client\n");
+    case 7:
+        printf("execution mode: multi user thread per client\n");
         acceptAndCreateThreadPerClients(PORT);
+        break;
+    case 10:
+        printf("execution mode: monitor large scc changes\n");
+        pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
+        __attribute__((fallthrough));
+    case 9:
+        printf("execution mode: proactor\n");
+        void *proactor = createAndAddListnerToProactor(PORT);
+        getchar();
+        shutdownProactor(proactor);
+        sleep(500);
         break;
     default:
         usage();
     }
-
-    printf("Strongly Connected Components:\n");
 
     return 0;
 }

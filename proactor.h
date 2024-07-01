@@ -2,10 +2,10 @@
 #define __PROACTOR_H__
 
 
-typedef void (*proactorFunc) (int sockfd);
+typedef void * (*proactorFunc) (int sockfd);
 
 void * startProactor (int sockfd, proactorFunc threadFunc);
 
-int stopProactor(pthread_t tid);
+int stopProactor(void *proactor);
 
 #endif

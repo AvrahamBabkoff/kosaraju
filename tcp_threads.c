@@ -7,12 +7,12 @@
 #include "tcp_dup.h"
 #include "kosaraju.h"
 #include "listner.h"
+#include "proactor.h"
 
-pthread_mutex_t _mutex  = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void *processClient(void *arg)
+void *processClientFd(int client)
 {
-    int client = (long)arg;
     char buf[256]; // Buffer for client data
     pthread_mutex_lock(&_mutex);
 
@@ -56,6 +56,11 @@ void *processClient(void *arg)
     }
     return NULL;
 }
+void *processClient(void *arg)
+{
+    int client = (long)arg;
+    return processClientFd(client);
+}
 
 void acceptAndCreateThreadPerClients(const char *port)
 {
@@ -75,7 +80,7 @@ void acceptAndCreateThreadPerClients(const char *port)
         }
         else
         {
-            //printf("new client connected\n");
+            // printf("new client connected\n");
             pthread_t thread;
             if (pthread_create(&thread, NULL, processClient, (void *)(long)client) != 0)
             {
@@ -84,4 +89,16 @@ void acceptAndCreateThreadPerClients(const char *port)
             }
         }
     }
+}
+
+void *createAndAddListnerToProactor(const char *port)
+{
+    int listner = createListner(port);
+    void *proactor = startProactor(listner, *processClientFd);
+    return proactor;
+}
+
+void shutdownProactor(void *proactor)
+{
+    stopProactor(proactor);
 }

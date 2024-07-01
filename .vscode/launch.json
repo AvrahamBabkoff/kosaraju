@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/debug/${fileBasenameNoExtension}",  // Path to your compiled program
-            "args": ["5"],  // Arguments to pass to the main method
+            "args": ["9"],  // Arguments to pass to the main method
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

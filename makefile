@@ -2,7 +2,7 @@
 CXX = gcc
 
 # Define compiler flags
-CXXFLAGS = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L
+CXXFLAGS = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
 
 # Define the target executable
 TARGET = bin/kosaraju
