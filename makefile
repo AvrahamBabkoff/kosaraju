@@ -15,17 +15,17 @@ AR = ar
 LIB_NAME = bin/async_engine.a
 
 # List of library source files
-LIB_SRCS = poll_reactor.c
+LIB_SRCS = poll_reactor.c proactor.c
 
 # LIB_OBJ = $(LIB_SRC:.c=.o)
 
 # List of header files
-HEADERS = kosaraju.h pollserver.h tcp_reactor.h tcp_dup.h listner.h tcp_threads.h
+HEADERS = kosaraju.h pollserver.h tcp_reactor.h tcp_dup.h listner.h tcp_threads.h poll_reactor.h proactor.h
 
 # Define the directory for object files
 OBJDIR = bin
 
-# List of object files (replace .cpp with .o and add OBJDIR prefix)
+# List of object files (replace .c with .o and add OBJDIR prefix)
 OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 
 LIB_OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(LIB_SRCS))
