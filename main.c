@@ -1,3 +1,13 @@
+/************************************************************************************************
+* Excersize 3: main.c
+* This module implements the main procedure of the process. The process can be launched with one
+* of 7 options depicted in the excersize , numbered according to their stage in the excersize
+* 
+* 
+* 
+* 
+*************************************************************************************************/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -24,7 +34,7 @@ void usage(void)
            "        6: as 4 using reactor pattern\n"
            "        7: run as \"chat\" server using a thread per client connection implementation\n"
            "        9: as 7 using proactor pattern\n"
-           "       10: added monitor thread on top of 9 to monitor existing scc crossing 50%% threshold of vertices\n");
+           "       10: added monitor thread on top of 9 to monitor existing scc number of vertices crossing 50%% threshold of total vertices\n");
 
     exit(-1);
 }
@@ -62,9 +72,7 @@ int main(int argc, char *argv[])
     case 1:
         printf("Enter the number of vertices and number of edges:");
         scanf("%d,%d", &vertices, &edges);
-        globalGraph = getNewGraph(vertices, edges);
-        kosaraju(globalGraph);
-        freeGraph(globalGraph);
+        createGraphAndExecuteKosaraju(vertices, edges);
         break;
     case 3:
         printf("execution mode: interaction\n");
@@ -79,7 +87,9 @@ int main(int argc, char *argv[])
         r = createtReactor();
         createAndAddListnerToReactor(PORT, r);
         startReactor(r);
-        printf("reactor %ld\n", (long int)r);
+        getchar();
+        stopReactor(r);
+        sleep(10);
         break;
     case 7:
         printf("execution mode: multi user thread per client\n");

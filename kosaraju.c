@@ -16,6 +16,20 @@ pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
 int sccThreasholdChanged = CROSS_THRESHOLD_NO_CHANGE;
 
+typedef struct Node
+{
+    int vertex;
+    struct Node *next;
+} Node;
+
+typedef struct Graph
+{
+    int numVertices;
+    Node **adjLists;
+    bool *visited;
+    bool maxInSccMoreThan50Percent;
+} Graph;
+
 Graph *globalGraph = NULL;
 
 void *MonitorLargeSCCChanges(void *arg)
@@ -384,4 +398,11 @@ void executeCommand(char *input)
         }
     }
     printf("enter command:\n");
+}
+
+void createGraphAndExecuteKosaraju(int vertices, int edges)
+{
+    globalGraph = getNewGraph(vertices, edges);
+    kosaraju(globalGraph);
+    freeGraph(globalGraph);
 }

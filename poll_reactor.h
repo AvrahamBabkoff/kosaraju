@@ -17,6 +17,5 @@ int startReactor (void * reactor_instance);
 // stops reactor
 int stopReactor(void * reactor_instance);
 
-// void printReactor(void *reactor_instance);
 
 #endif

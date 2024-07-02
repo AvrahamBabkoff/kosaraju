@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
+#include <pthread.h>
 #include "poll_reactor.h"
 
 #define INITIAL_NUM_OF_FDS 10
@@ -22,21 +23,38 @@ struct ReactorHandler
 struct reactor
 {
     struct ReactorHandler *reactorHandlers;
-    // struct pollfd *pfds;
     int fd_size;
     int fd_count;
     bool running;
+    // used to signal shutdown
+    int pipe_fds[2];
 };
+
+void shutdownFunc(int fd, void *reactor)
+{
+    (void)fd;
+    printf("shutting down reactor\n");
+    struct reactor *rct = (struct reactor *)reactor;
+    rct->running = false;
+}
 
 void *createtReactor()
 {
-    printf("Hello again from reactor library!!!\n");
     struct reactor *newReactor = (struct reactor *)malloc(sizeof(struct reactor));
-    // newReactor->pfds = (struct pollfd *)malloc(sizeof(struct pollfd) * INITIAL_NUM_OF_FDS);
-    newReactor->reactorHandlers = (struct ReactorHandler *)malloc(sizeof(struct ReactorHandler) * INITIAL_NUM_OF_FDS);
-    newReactor->fd_count = 0;
-    newReactor->fd_size = INITIAL_NUM_OF_FDS;
-    newReactor->running = false;
+    if (pipe(newReactor->pipe_fds) == -1)
+    {
+        perror("pipe");
+        free(newReactor);
+        newReactor = NULL;
+    }
+    else
+    {
+        newReactor->reactorHandlers = (struct ReactorHandler *)malloc(sizeof(struct ReactorHandler) * INITIAL_NUM_OF_FDS);
+        newReactor->fd_count = 0;
+        newReactor->fd_size = INITIAL_NUM_OF_FDS;
+        newReactor->running = false;
+        addFdToReactor(newReactor, newReactor->pipe_fds[0], shutdownFunc);
+    }
 
     return newReactor;
 }
@@ -47,14 +65,11 @@ int addFdToReactor(void *reactor_instance, int fd, reactorFunc func)
     struct reactor *rct = (struct reactor *)reactor_instance;
     if (rct->fd_size == rct->fd_count)
     {
-        // double size
+        // double the size
         rct->fd_size *= 2;
-        // rct->pfds = (struct pollfd *)realloc(rct->pfds, sizeof(struct pollfd) * rct->fd_size);
         rct->reactorHandlers = (struct ReactorHandler *)realloc(rct->reactorHandlers, sizeof(struct ReactorHandler) * rct->fd_size);
         printf("reallocated reactor to size %d, count will be %d", rct->fd_size, rct->fd_count + 1);
     }
-    // rct->pfds[rct->fd_count].fd = fd;
-    // rct->pfds[rct->fd_count].events = POLLIN;
     rct->reactorHandlers[rct->fd_count].fd = fd;
     rct->reactorHandlers[rct->fd_count].func = func;
     rct->fd_count++;
@@ -65,7 +80,7 @@ int addFdToReactor(void *reactor_instance, int fd, reactorFunc func)
 
 int removeFdFromReactor(void *reactor_instance, int fd)
 {
-    // chek size and count
+    // check size and count
     struct reactor *rct = (struct reactor *)reactor_instance;
     int removed = 0;
     for (int i = 0; i < rct->fd_count; i++)
@@ -85,18 +100,6 @@ int removeFdFromReactor(void *reactor_instance, int fd)
     return removed;
 }
 
-// void printReactor(void *reactor_instance)
-// {
-//     // chek size and count
-//     struct reactor *rct = (struct reactor *)reactor_instance;
-//     for (int i = 0; i < rct->fd_count; i++)
-//     {
-//         printf("fd: %d, ", rct->reactorHandlers[i].socket);
-//         rct->reactorHandlers[i].func( rct->reactorHandlers[i].socket, reactor_instance);
-//         printf("\n");
-//     }
-// }
-
 void fillPollArray(struct reactor *rct, struct pollfd *fds)
 {
     for (int i = 0; i < rct->fd_count; i++)
@@ -106,9 +109,9 @@ void fillPollArray(struct reactor *rct, struct pollfd *fds)
     }
 }
 
-int startReactor(void *reactor_instance)
+void *reactorMainThread(void *arg)
 {
-    struct reactor *rct = (struct reactor *)reactor_instance;
+    struct reactor *rct = (struct reactor *)arg;
 
     rct->running = true;
     while (rct->running)
@@ -129,10 +132,42 @@ int startReactor(void *reactor_instance)
             {
                 if (fds[i].revents & POLLIN)
                 {
-                    rct->reactorHandlers[i].func(rct->reactorHandlers[i].fd, reactor_instance);
+                    rct->reactorHandlers[i].func(rct->reactorHandlers[i].fd, rct);
                 }
             }
         }
     }
-    return 1;
+    // if here, we were signalled to exit
+    printf("shutting down reactor thread func\n");
+    for (int i = 0; i < rct->fd_count; i++)
+    {
+        close(rct->reactorHandlers[i].fd);
+        close(rct->pipe_fds[1]);
+    }
+    free(rct->reactorHandlers);
+    free(rct);
+    return NULL;
+}
+
+int startReactor(void *reactor_instance)
+{
+    int retVal = 0;
+    struct reactor *rct = (struct reactor *)reactor_instance;
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, reactorMainThread, rct) != 0)
+    {
+        perror("pthread_create");
+        retVal = -1;
+    }
+
+    return retVal;
+}
+
+int stopReactor(void *reactor_instance)
+{
+    struct reactor *rct = (struct reactor *)reactor_instance;
+    char ch = 0;
+    write(rct->pipe_fds[1], &ch, sizeof(ch));
+    // reactor_instance is no longer valid
+    return  0;
 }
