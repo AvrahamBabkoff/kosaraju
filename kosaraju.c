@@ -5,48 +5,16 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "kosaraju.h"
-#include "pollserver.h"
-#include "poll_reactor.h"
-#include "tcp_reactor.h"
 #include "tcp_threads.h"
-
-#define PORT "9034"
+#include "main.h"
 
 pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
 bool sccThreasholdChanged = false;
 
-typedef struct Node
-{
-    int vertex;
-    struct Node *next;
-} Node;
-
-typedef struct Graph
-{
-    int numVertices;
-    Node **adjLists;
-    bool *visited;
-    bool maxInSccMoreThan50Percent;
-} Graph;
 
 Graph *globalGraph = NULL;
 
-void usage(void)
-{
-    printf("Usage: kosaraju <stage>\n"
-           "    valid values of <stage>:\n"
-           "        1: user enters graph vertices and edges, followed by a list of the directed edges\n"
-           "        2: user can enter following commands:\n"
-           "            Newgraph <verttices>,<edges>\n"
-           "                User should enter <edges> pairs of directed edges\n"
-           "            Kosaraju\n"
-           "            Newedge <from>,<to>\n"
-           "            Removeedge <from>,<to>\n"
-           "        3: run as \"chat\" server. connected clients can enter commands as in 2\n");
-
-    exit(-1);
-}
 
 void *MonitorLargeSCCChanges(void *arg)
 {
@@ -54,27 +22,29 @@ void *MonitorLargeSCCChanges(void *arg)
 
     while (1)
     {
-        printf("going to lock the mutex\n");
         pthread_mutex_lock(&_mutex);
-        printf("got lock on mutex\n");
         if (!sccThreasholdChanged)
         {
-            printf("going to wait on condition\n");
-
             pthread_cond_wait(&_cond, &_mutex);
-            printf("returned from wait on condition\n");
         }
         if (sccThreasholdChanged)
         {
             printf(globalGraph->maxInSccMoreThan50Percent ? "At least 50%% of the graph belongs to the same SCC\n" : "At least 50%% of the graph no longer belongs to the same SCC\n");
             sccThreasholdChanged = false;
         }
-        printf("going to unlock the mitext\n");
         pthread_mutex_unlock(&_mutex);
     }
 
     return NULL;
 }
+
+void startMonitorLargeSCCChanges()
+{
+    pthread_t thread;
+
+    pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
+}
+
 Node *createNode(int vertex)
 {
     Node *newNode = (Node *)malloc(sizeof(Node));
@@ -247,25 +217,20 @@ void kosaraju(Graph *graph)
             maxVerticesInScc = verticesInScc > maxVerticesInScc ? verticesInScc : maxVerticesInScc;
         }
     }
-    // printf("largest scc has %d vertices\n", maxVerticesInScc);
-    // pthread_mutex_lock(&_mutex);
     if (maxVerticesInScc > (double)graph->numVertices / 2.0 && !graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = true;
         sccThreasholdChanged = true;
-        // printf("At least 50%% of the graph belongs to the same SCC\n");
     }
     else if (maxVerticesInScc <= (double)graph->numVertices / 2.0 && graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = false;
         sccThreasholdChanged = true;
-        // printf("At least 50%% of the graph no longer belongs to the same SCC\n");
     }
     if (sccThreasholdChanged)
     {
         pthread_cond_signal(&_cond);
     }
-    // pthread_mutex_unlock(&_mutex);
     freeGraph(transpose);
 }
 
@@ -403,77 +368,4 @@ void executeCommand(char *input)
     printf("enter command:\n");
 }
 
-void getAndExecuteCommand()
-{
-    char input[1024];
-    printCommands();
-    while (1)
-    {
-        ssize_t bytesRead;
-        bytesRead = read(STDIN_FILENO, input, sizeof(input) - 1);
-        if (bytesRead < 0)
-        {
-            perror("read");
-            exit(EXIT_FAILURE);
-        }
-        input[bytesRead] = '\0';
-        executeCommand(input);
-    }
-}
 
-int main(int argc, char *argv[])
-{
-    pthread_t thread;
-    void *r;
-    int vertices, edges, stage;
-
-    if (argc != 2)
-    {
-        usage();
-    }
-    stage = atoi(argv[1]);
-    switch (stage)
-    {
-    case 1:
-        printf("Enter the number of vertices and number of edges:");
-        scanf("%d,%d", &vertices, &edges);
-        globalGraph = getNewGraph(vertices, edges);
-        kosaraju(globalGraph);
-        freeGraph(globalGraph);
-        break;
-    case 3:
-        printf("execution mode: interaction\n");
-        getAndExecuteCommand();
-        break;
-    case 4:
-        printf("execution mode: multi user\n");
-        chat();
-        break;
-    case 6:
-        printf("execution mode: multi user reactor\n");
-        r = createtReactor();
-        createAndAddListnerToReactor(PORT, r);
-        startReactor(r);
-        printf("reactor %ld\n", (long int)r);
-        break;
-    case 7:
-        printf("execution mode: multi user thread per client\n");
-        acceptAndCreateThreadPerClients(PORT);
-        break;
-    case 10:
-        printf("execution mode: monitor large scc changes\n");
-        pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
-        __attribute__((fallthrough));
-    case 9:
-        printf("execution mode: proactor\n");
-        void *proactor = createAndAddListnerToProactor(PORT);
-        getchar();
-        shutdownProactor(proactor);
-        sleep(500);
-        break;
-    default:
-        usage();
-    }
-
-    return 0;
-}

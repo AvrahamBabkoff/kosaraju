@@ -8,7 +8,7 @@ CXXFLAGS = -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
 TARGET = bin/kosaraju
 
 # List of source files
-SRCS = kosaraju.c pollserver.c tcp_reactor.c tcp_dup.c listner.c tcp_threads.c
+SRCS = main.c kosaraju.c pollserver.c reactor_impl.c tcp_dup.c listner.c tcp_threads.c
 
 AR = ar
 
@@ -20,7 +20,7 @@ LIB_SRCS = poll_reactor.c proactor.c
 # LIB_OBJ = $(LIB_SRC:.c=.o)
 
 # List of header files
-HEADERS = kosaraju.h pollserver.h tcp_reactor.h tcp_dup.h listner.h tcp_threads.h poll_reactor.h proactor.h
+HEADERS = kosaraju.h pollserver.h reactor_impl.h tcp_dup.h listner.h tcp_threads.h poll_reactor.h proactor.h
 
 # Define the directory for object files
 OBJDIR = bin
