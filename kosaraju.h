@@ -23,6 +23,7 @@ void printCommands();
 Graph *getNewGraph(int vertices, int edges);
 void freeGraph(Graph *graph);
 void startMonitorLargeSCCChanges();
+void signalMonitorLargeSCCChangesToTerminate();
 void kosaraju(Graph *graph);
 
 #endif // __KOSARAJU_H__

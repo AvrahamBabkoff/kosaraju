@@ -10,34 +10,52 @@
 
 pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
-bool sccThreasholdChanged = false;
+#define CROSS_THRESHOLD_CHANGED 1
+#define CROSS_THRESHOLD_NO_CHANGE 0
+#define CROSS_THRESHOLD_TERMINATE -1
 
+int sccThreasholdChanged = CROSS_THRESHOLD_NO_CHANGE;
 
 Graph *globalGraph = NULL;
 
-
 void *MonitorLargeSCCChanges(void *arg)
 {
+    bool terminate = false;
     (void)arg;
 
     while (1)
     {
         pthread_mutex_lock(&_mutex);
-        if (!sccThreasholdChanged)
+        if (sccThreasholdChanged == CROSS_THRESHOLD_NO_CHANGE)
         {
             pthread_cond_wait(&_cond, &_mutex);
         }
-        if (sccThreasholdChanged)
+        if (sccThreasholdChanged == CROSS_THRESHOLD_CHANGED)
         {
             printf(globalGraph->maxInSccMoreThan50Percent ? "At least 50%% of the graph belongs to the same SCC\n" : "At least 50%% of the graph no longer belongs to the same SCC\n");
-            sccThreasholdChanged = false;
+            sccThreasholdChanged = CROSS_THRESHOLD_NO_CHANGE;
+        }
+        if (sccThreasholdChanged == CROSS_THRESHOLD_TERMINATE)
+        {
+            terminate = true;
         }
         pthread_mutex_unlock(&_mutex);
+        if (terminate)
+        {
+            break;
+        }
     }
-
+    printf("monitor thread terminating...\n");
     return NULL;
 }
 
+void signalMonitorLargeSCCChangesToTerminate()
+{
+    pthread_mutex_lock(&_mutex);
+    sccThreasholdChanged = CROSS_THRESHOLD_TERMINATE;
+    pthread_cond_signal(&_cond);
+    pthread_mutex_unlock(&_mutex);
+}
 void startMonitorLargeSCCChanges()
 {
     pthread_t thread;
@@ -220,14 +238,14 @@ void kosaraju(Graph *graph)
     if (maxVerticesInScc > (double)graph->numVertices / 2.0 && !graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = true;
-        sccThreasholdChanged = true;
+        sccThreasholdChanged = CROSS_THRESHOLD_CHANGED;
     }
     else if (maxVerticesInScc <= (double)graph->numVertices / 2.0 && graph->maxInSccMoreThan50Percent)
     {
         graph->maxInSccMoreThan50Percent = false;
-        sccThreasholdChanged = true;
+        sccThreasholdChanged = CROSS_THRESHOLD_CHANGED;
     }
-    if (sccThreasholdChanged)
+    if (sccThreasholdChanged == CROSS_THRESHOLD_CHANGED)
     {
         pthread_cond_signal(&_cond);
     }
@@ -367,5 +385,3 @@ void executeCommand(char *input)
     }
     printf("enter command:\n");
 }
-
-

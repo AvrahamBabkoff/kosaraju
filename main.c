@@ -22,7 +22,7 @@ void usage(void)
            "            Removeedge <from>,<to>\n"
            "        4: run as \"chat\" server using poll multiplexer API. connected clients can enter commands as in 3\n"
            "        6: as 4 using reactor pattern\n"
-           "        7: run as \"chat\" server using a thread per client connection\n"
+           "        7: run as \"chat\" server using a thread per client connection implementation\n"
            "        9: as 7 using proactor pattern\n"
            "       10: added monitor thread on top of 9 to monitor existing scc crossing 50%% threshold of vertices\n");
 
@@ -46,7 +46,6 @@ void getAndExecuteCommand()
         executeCommand(input);
     }
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -95,7 +94,11 @@ int main(int argc, char *argv[])
         void *proactor = createAndAddListnerToProactor(PORT);
         getchar();
         shutdownProactor(proactor);
-        sleep(500);
+        if (stage == 10)
+        {
+            signalMonitorLargeSCCChangesToTerminate();
+        }
+        sleep(10);
         break;
     default:
         usage();
