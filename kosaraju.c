@@ -8,6 +8,7 @@
 #include "tcp_threads.h"
 #include "main.h"
 
+/* constants and variable used by the monitoring of crossing of the 50% threshold of vertices belonging to a single SCC */
 pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
 #define CROSS_THRESHOLD_CHANGED 1
@@ -16,6 +17,10 @@ pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 
 int sccThreasholdChanged = CROSS_THRESHOLD_NO_CHANGE;
 
+
+
+
+/* graph data structures */
 typedef struct Node
 {
     int vertex;
@@ -30,7 +35,27 @@ typedef struct Graph
     bool maxInSccMoreThan50Percent;
 } Graph;
 
+
+/* the graph instance */
 Graph *globalGraph = NULL;
+
+
+/************************************************************
+* MonitorLargeSCCChanges:
+* 
+* Implementation of the crossing of the 50% threshold of. 
+* vertices belonging to a single SCC. 
+* used in stage 10
+************************************************************/
+
+/*
+* method enters an infinite loop, while blocking on a pthread_cond_t
+* waiting to be signalled. Once signalled, the methed checks if the signal
+* is a 
+*  - threshold change: print to the stdout
+*  - termination request: break and exit the thread function
+* 
+*/
 
 void *MonitorLargeSCCChanges(void *arg)
 {
@@ -63,6 +88,14 @@ void *MonitorLargeSCCChanges(void *arg)
     return NULL;
 }
 
+
+/************************************************************
+* signalMonitorLargeSCCChangesToTerminate:
+* 
+* Signal MonitorLargeSCCChanges to terminate
+* used in stage 10
+************************************************************/
+
 void signalMonitorLargeSCCChangesToTerminate()
 {
     pthread_mutex_lock(&_mutex);
@@ -70,12 +103,34 @@ void signalMonitorLargeSCCChangesToTerminate()
     pthread_cond_signal(&_cond);
     pthread_mutex_unlock(&_mutex);
 }
+
+/************************************************************
+* startMonitorLargeSCCChanges:
+* 
+* Starts MonitorLargeSCCChanges thread, called from main.c
+* used in stage 10
+************************************************************/
+
 void startMonitorLargeSCCChanges()
 {
     pthread_t thread;
 
     pthread_create(&thread, NULL, MonitorLargeSCCChanges, NULL);
 }
+
+
+/************************************************************
+* Graph and kosaraju methods:
+* createNode
+* createGraph
+* freeGraph
+* removeEdge
+* addEdge
+* dfs
+* getTranspose
+* dfsPrint
+* kosaraju
+************************************************************/
 
 Node *createNode(int vertex)
 {

@@ -23,7 +23,8 @@ pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
 * thread starts for a new connection, we print the commands to the connection.
 * when recv returns, we either get and input which we forward to executeCommandToFd
 * or the client disconnects
-* Note: printCommandsToFd
+* Note: printCommandsToFd and executeCommandToFdare not thread safe and are protected 
+* by a global mutex
 * 
 */
 
@@ -68,16 +69,9 @@ void *processClientFd(int client)
 /************************************************************
 * processClient:
 * 
-* Implementation of the dedicated thread per client function 
-* of stage 7 and proactor function of stage 9.
+* wraps processClientFd. used in stage 7
+* 
 ************************************************************/
-
-/**
-* enter infinite loop blocking on recv. 
-* thread starts for a new connection, when recv returns, a nre thread 
-* is created with processClient as the thread function, the client socket
-* is passed as a thread argument
-*/
 
 void *processClient(void *arg)
 {
@@ -126,6 +120,13 @@ void acceptAndCreateThreadPerClients(const char *port)
     }
 }
 
+/************************************************************
+* createAndAddListnerToProactor:
+* 
+* Start listner and initilize an instance of a proactor
+* called from main.c for stages 9 & 10
+************************************************************/
+
 void *createAndAddListnerToProactor(const char *port)
 {
     int listner = createListner(port);
@@ -133,6 +134,12 @@ void *createAndAddListnerToProactor(const char *port)
     return proactor;
 }
 
+/************************************************************
+* shutdownProactor:
+* 
+* Shutdown a proactor
+* called from main.c for stages 9 & 10
+************************************************************/
 void shutdownProactor(void *proactor)
 {
     stopProactor(proactor);
