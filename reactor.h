@@ -1,5 +1,5 @@
-#ifndef __POLL_REACTOR_H__
-#define __POLL_REACTOR_H__
+#ifndef __REACTOR_H__
+#define __REACTOR_H__
 
 typedef void (*reactorFunc) (int fd, void *reactor);
 

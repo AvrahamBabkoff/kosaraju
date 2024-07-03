@@ -18,7 +18,7 @@ Files: main.c, pollserver.c, tcp_dup.c, Makefile
 Based on Beej's chat implementation, together with duplicating stdin and stdout with the client sockets to meet the requirements.
 
 Stage 5
-Files: poll_reactor.c, Makefile
+Files: reactor.c, Makefile
 Created a static library async_engine.a implementing the reactor pattern.
 
 Although the reactor can execute on the main thread, we chose to have the reactor poll loop run on a dedicated thread. This allows us to demonstrate the stopReactor method in the next stage (stage 6).

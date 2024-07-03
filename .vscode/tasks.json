@@ -13,7 +13,7 @@
                 "tcp_dup.c", 
                 "listner.c", 
                 "tcp_threads.c",
-                "poll_reactor.c",
+                "reactor.c",
                 "proactor.c",
                 "-o",
                 "${fileDirname}/debug/${fileBasenameNoExtension}"

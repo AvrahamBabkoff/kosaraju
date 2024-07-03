@@ -11,7 +11,7 @@
 #include <netdb.h>
 #include <poll.h>
 #include <pthread.h>
-#include "poll_reactor.h"
+#include "reactor.h"
 
 #define INITIAL_NUM_OF_FDS 10
 struct ReactorHandler
