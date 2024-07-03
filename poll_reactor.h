@@ -3,7 +3,7 @@
 
 typedef void (*reactorFunc) (int fd, void *reactor);
 
-// starts new reactor and returns pointer to it
+// creates new reactor and returns pointer to it
 void * createtReactor ();
 
 // adds fd to Reactor (for reading) ; returns 0 on success.

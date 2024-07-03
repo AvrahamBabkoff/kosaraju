@@ -54,7 +54,6 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
     (*fd_count)--;
 }
 
-
 void chat(const char *port)
 {
     int listener; // Listening socket descriptor
@@ -130,11 +129,7 @@ void chat(const char *port)
                                          get_in_addr((struct sockaddr *)&remoteaddr),
                                          remoteIP, INET6_ADDRSTRLEN),
                                newfd);
-                        int saved_stdout = tcp_dup_std(newfd, STDOUT_FILENO);
-                        int saved_stdin = tcp_dup_std(newfd, STDIN_FILENO);
-                        printCommands();
-                        tcp_undup_std(saved_stdout, STDOUT_FILENO);
-                        tcp_undup_std(saved_stdin, STDIN_FILENO);
+                        printCommandsToFd(newfd);
                     }
                 }
                 else
@@ -163,14 +158,8 @@ void chat(const char *port)
                     }
                     else
                     {
-                        buf[nbytes]='\0';
-                        int saved_stdout = tcp_dup_std(sender_fd, STDOUT_FILENO);
-                        int saved_stdin = tcp_dup_std(sender_fd, STDIN_FILENO);
-
-                        executeCommand(buf);
-                        tcp_undup_std(saved_stdout, STDOUT_FILENO);
-                        tcp_undup_std(saved_stdin, STDIN_FILENO);
-
+                        buf[nbytes] = '\0';
+                        executeCommandToFd(sender_fd, buf);
                     }
                 }
             }

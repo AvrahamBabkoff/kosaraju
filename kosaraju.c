@@ -394,7 +394,6 @@ void executeCommand(char *input)
         else
         {
             printf("unrecognized command %s\n", token);
-            usage();
         }
     }
     printf("enter command:\n");

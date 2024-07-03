@@ -11,16 +11,27 @@
 
 pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/************************************************************
+* processClientFd:
+* 
+* Implementation of the dedicated thread per client function 
+* of stage 7 and proactor function of stage 9.
+************************************************************/
+
+/**
+* enter infinite loop blocking on recv. 
+* thread starts for a new connection, when recv returns, a nre thread 
+* is created with processClient as the thread function, the client socket
+* is passed as a thread argument
+*/
+
 void *processClientFd(int client)
 {
     char buf[256]; // Buffer for client data
     pthread_mutex_lock(&_mutex);
 
-    int saved_stdout = tcp_dup_std(client, STDOUT_FILENO);
-    int saved_stdin = tcp_dup_std(client, STDIN_FILENO);
-    printCommands();
-    tcp_undup_std(saved_stdout, STDOUT_FILENO);
-    tcp_undup_std(saved_stdin, STDIN_FILENO);
+    printCommandsToFd(client);
+
     pthread_mutex_unlock(&_mutex);
     while (1)
     {
@@ -43,24 +54,34 @@ void *processClientFd(int client)
         }
         else
         {
-            pthread_mutex_lock(&_mutex);
             buf[nbytes] = '\0';
-            int saved_stdout = tcp_dup_std(client, STDOUT_FILENO);
-            int saved_stdin = tcp_dup_std(client, STDIN_FILENO);
-
-            executeCommand(buf);
-            tcp_undup_std(saved_stdout, STDOUT_FILENO);
-            tcp_undup_std(saved_stdin, STDIN_FILENO);
+            pthread_mutex_lock(&_mutex);
+            executeCommandToFd(client, buf);
             pthread_mutex_unlock(&_mutex);
         }
     }
     return NULL;
 }
+
+
 void *processClient(void *arg)
 {
     int client = (long)arg;
     return processClientFd(client);
 }
+
+
+/************************************************************
+* acceptAndCreateThreadPerClients:
+* 
+* Implementation of the main function of stage 7.
+************************************************************/
+
+/**
+* enter infinite loop blocking on accept. when accept returns, a new thread 
+* is created with processClient as the thread function, the client socket
+* is passed as a thread argument
+*/
 
 void acceptAndCreateThreadPerClients(const char *port)
 {
@@ -80,7 +101,6 @@ void acceptAndCreateThreadPerClients(const char *port)
         }
         else
         {
-            // printf("new client connected\n");
             pthread_t thread;
             if (pthread_create(&thread, NULL, processClient, (void *)(long)client) != 0)
             {

@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
         chat(PORT);
         break;
     case 6:
-        printf("execution mode: multi user reactor\n");
+        printf("execution mode: multi user reactor. enter any key to terminate\n");
         r = createtReactor();
         createAndAddListnerToReactor(PORT, r);
         startReactor(r);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         startMonitorLargeSCCChanges();
         __attribute__((fallthrough));
     case 9:
-        printf("execution mode: proactor\n");
+        printf("execution mode: proactor. enter any key to terminate\n");
         void *proactor = createAndAddListnerToProactor(PORT);
         getchar();
         shutdownProactor(proactor);
