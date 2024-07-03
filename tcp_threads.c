@@ -23,7 +23,7 @@ pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
 * thread starts for a new connection, we print the commands to the connection.
 * when recv returns, we either get and input which we forward to executeCommandToFd
 * or the client disconnects
-* Note:
+* Note: printCommandsToFd
 * 
 */
 
