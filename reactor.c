@@ -144,8 +144,8 @@ void *reactorMainThread(void *arg)
     for (int i = 0; i < rct->fd_count; i++)
     {
         close(rct->reactorHandlers[i].fd);
-        close(rct->pipe_fds[1]);
     }
+    close(rct->pipe_fds[1]);
     free(rct->reactorHandlers);
     free(rct);
     return NULL;

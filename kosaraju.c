@@ -459,4 +459,5 @@ void createGraphAndExecuteKosaraju(int vertices, int edges)
     globalGraph = getNewGraph(vertices, edges);
     kosaraju(globalGraph);
     freeGraph(globalGraph);
+    globalGraph = NULL;
 }

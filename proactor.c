@@ -51,7 +51,7 @@ void *invokeProactorFunc(void *arg)
 void *proactorMainThread(void *arg)
 {
     struct proactor *prct = (struct proactor *)arg;
-    (void)prct;
+
     struct pollfd fds[2];
 
     // Set up poll structure
@@ -103,7 +103,7 @@ void *proactorMainThread(void *arg)
                 ++clients_count;
             }
         }
-        else if (fds[1].revents & POLLIN)
+        if (fds[1].revents & POLLIN)
         {
             int fd;
             read(prct->pipe_fds[0], &fd, sizeof(fd));
@@ -205,5 +205,6 @@ int stopProactor(void *proactor)
     {
         printf("proactor thread %ld terminated\n", thread_id);
     }
+    free(prct);
     return 0;
 }
