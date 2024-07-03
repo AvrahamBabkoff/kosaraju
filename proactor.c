@@ -20,6 +20,7 @@ struct proactor
     proactorFunc func;
     int pipe_fds[2];
     int sockfd;
+    pthread_t thread_id;
 };
 
 struct proactor_client
@@ -131,10 +132,8 @@ void *proactorMainThread(void *arg)
                     struct timespec ts;
                     int s;
 
-                    if (clock_gettime(CLOCK_REALTIME, &ts) == -1)
-                    {
-                        /* Handle error */
-                    }
+                    clock_gettime(CLOCK_REALTIME, &ts);
+
                     ts.tv_sec += 2;
 
                     s = pthread_timedjoin_np(clients[i].thread, NULL, &ts);
@@ -148,6 +147,7 @@ void *proactorMainThread(void *arg)
             }
         }
     }
+    free(clients);
     return NULL;
 }
 
@@ -164,14 +164,17 @@ void *startProactor(int sockfd, proactorFunc threadFunc)
     }
     else
     {
-        pthread_t thread;
-        if (pthread_create(&thread, NULL, proactorMainThread, prct) != 0)
+        if (pthread_create(&prct->thread_id, NULL, proactorMainThread, prct) != 0)
         {
             perror("pthread_create");
             close(prct->pipe_fds[0]);
             close(prct->pipe_fds[1]);
             free(prct);
             prct = NULL;
+        }
+        else
+        {
+            printf("created proactor thread %ld\n", prct->thread_id);
         }
     }
 
@@ -181,7 +184,26 @@ void *startProactor(int sockfd, proactorFunc threadFunc)
 int stopProactor(void *proactor)
 {
     struct proactor *prct = (struct proactor *)proactor;
+    pthread_t thread_id = prct->thread_id;
     int fd = -1;
     write(prct->pipe_fds[1], &fd, sizeof(fd));
+    // wait for thread to terminate
+    struct timespec ts;
+    int s;
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    ts.tv_sec += 2;
+
+    s = pthread_timedjoin_np(thread_id, NULL, &ts);
+    if (s != 0)
+    {
+        printf("cancelling proactor thread %ld\n", thread_id);
+        pthread_cancel(thread_id);
+    }
+    else
+    {
+        printf("proactor thread %ld terminated\n", thread_id);
+    }
     return 0;
 }

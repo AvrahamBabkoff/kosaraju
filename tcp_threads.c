@@ -18,11 +18,13 @@ pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
 * of stage 7 and proactor function of stage 9.
 ************************************************************/
 
-/**
+/*
 * enter infinite loop blocking on recv. 
-* thread starts for a new connection, when recv returns, a nre thread 
-* is created with processClient as the thread function, the client socket
-* is passed as a thread argument
+* thread starts for a new connection, we print the commands to the connection.
+* when recv returns, we either get and input which we forward to executeCommandToFd
+* or the client disconnects
+* Note:
+* 
 */
 
 void *processClientFd(int client)
@@ -63,6 +65,19 @@ void *processClientFd(int client)
     return NULL;
 }
 
+/************************************************************
+* processClient:
+* 
+* Implementation of the dedicated thread per client function 
+* of stage 7 and proactor function of stage 9.
+************************************************************/
+
+/**
+* enter infinite loop blocking on recv. 
+* thread starts for a new connection, when recv returns, a nre thread 
+* is created with processClient as the thread function, the client socket
+* is passed as a thread argument
+*/
 
 void *processClient(void *arg)
 {

@@ -28,6 +28,7 @@ struct reactor
     bool running;
     // used to signal shutdown
     int pipe_fds[2];
+    pthread_t thread_id;
 };
 
 void shutdownFunc(int fd, void *reactor)
@@ -53,6 +54,7 @@ void *createtReactor()
         newReactor->fd_count = 0;
         newReactor->fd_size = INITIAL_NUM_OF_FDS;
         newReactor->running = false;
+        newReactor->thread_id = -1;
         addFdToReactor(newReactor, newReactor->pipe_fds[0], shutdownFunc);
     }
 
@@ -153,8 +155,7 @@ int startReactor(void *reactor_instance)
 {
     int retVal = 0;
     struct reactor *rct = (struct reactor *)reactor_instance;
-    pthread_t thread;
-    if (pthread_create(&thread, NULL, reactorMainThread, rct) != 0)
+    if (pthread_create(&rct->thread_id, NULL, reactorMainThread, rct) != 0)
     {
         perror("pthread_create");
         retVal = -1;
@@ -165,9 +166,29 @@ int startReactor(void *reactor_instance)
 
 int stopReactor(void *reactor_instance)
 {
+
     struct reactor *rct = (struct reactor *)reactor_instance;
+    pthread_t thread_id = rct->thread_id;
     char ch = 0;
     write(rct->pipe_fds[1], &ch, sizeof(ch));
     // reactor_instance is no longer valid
-    return  0;
+    // wait for thread to terminate
+    struct timespec ts;
+    int s;
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    ts.tv_sec += 2;
+
+    s = pthread_timedjoin_np(thread_id, NULL, &ts);
+    if (s != 0)
+    {
+        printf("cancelling thread %ld", thread_id);
+        pthread_cancel(thread_id);
+    }
+    else
+    {
+        printf("reactor thread %ld terminated\n", thread_id);
+    }
+    return 0;
 }
